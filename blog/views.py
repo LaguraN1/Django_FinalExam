@@ -14,7 +14,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from django.shortcuts import redirect, get_object_or_404
 
-from .models import Post, Comment, Bookmark, Follow
+from .models import Post, Tag, Comment, Bookmark, Follow
 from .forms import PostForm, CommentForm
 
 from .mixins import OwnerRequiredMixin, SearchContextMixin
@@ -26,7 +26,6 @@ User = get_user_model()
 
 
 class PostListView(SearchContextMixin, ListView):
-
     model = Post
     template_name = "blog/post_list.html"
     context_object_name = "posts"
@@ -37,6 +36,31 @@ class PostListView(SearchContextMixin, ListView):
         return PostService.get_published_posts(query)
 
 
+class TagPostsView(SearchContextMixin, ListView):
+    model = Post
+    template_name = "blog/post_list.html"
+    context_object_name = "posts"
+    paginate_by = 10
+
+    def get_queryset(self):
+        self.tag = get_object_or_404(
+            Tag,
+            slug=self.kwargs["slug"]
+        )
+
+        return Post.objects.published().filter(
+            tags=self.tag
+        ).select_related(
+            "user"
+        ).prefetch_related(
+            "tags"
+        ).order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tag"] = self.tag
+        return context
+
 
 class TrendingPostsView(ListView):
     model = Post
@@ -45,6 +69,7 @@ class TrendingPostsView(ListView):
 
     def get_queryset(self):
         return PostService.get_trending_posts()
+
 
 class PostDetailView(DetailView):
     model = Post

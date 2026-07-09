@@ -6,13 +6,19 @@ app_name = "blog"
 urlpatterns = [
     path("", views.PostListView.as_view(), name="post-list"),
 
-    path("post/create/", views.PostCreateView.as_view(), name="post-create"),
+    path(
+        "tag/<slug:slug>/",
+        views.TagPostsView.as_view(),
+        name="tag-posts"
+    ),
 
     path(
         "trending/",
         views.TrendingPostsView.as_view(),
         name="trending-posts"
     ),
+
+    path("post/create/", views.PostCreateView.as_view(), name="post-create"),
 
     path(
         "post/<slug:slug>/",
@@ -85,5 +91,4 @@ urlpatterns = [
         views.MyBookmarksView.as_view(),
         name="bookmarks"
     ),
-
 ]
