@@ -18,6 +18,13 @@ DRF Pattern: Generic API Views
 Reason: Student ID is even
 
 ---
+## Live Demo
+
+https://lagura.pythonanywhere.com/
+
+## Admin URL
+
+https://lagura.pythonanywhere.com/admin/
 
 ## Features
 
