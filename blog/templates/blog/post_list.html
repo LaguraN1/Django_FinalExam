@@ -1,0 +1,95 @@
+{% extends "blog/base.html" %}
+{% load blog_extras %}
+
+{% block title %}
+Home
+{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">
+    Latest Posts
+</h1>
+
+<form method="get" class="mb-4">
+
+    <div class="input-group">
+
+        <input 
+        type="text"
+        name="q"
+        value="{{ q }}"
+        class="form-control"
+        placeholder="Search posts, authors, or tags...">
+
+        <button class="btn btn-primary">
+            Search
+        </button>
+
+        {% if q %}
+
+        <a 
+        href="{% url 'blog:post-list' %}"
+        class="btn btn-secondary">
+            Clear
+        </a>
+
+        {% endif %}
+
+    </div>
+
+</form>
+
+{% if q %}
+
+<p class="text-muted">
+    Search results for: <strong>{{ q }}</strong>
+</p>
+
+{% endif %}
+
+{% for post in posts %}
+
+<div class="card mb-3">
+
+    <div class="card-body">
+
+        <h2>
+            <a href="{% url 'blog:post-detail' post.slug %}">
+                {{ post.title }}
+            </a>
+        </h2>
+
+        <p>
+            {{ post.body|truncatewords:30 }}
+        </p>
+
+        <p class="text-muted">
+            {{ post.body|read_time }}
+        </p>
+
+        <small>
+            By 
+            <a href="{% url 'blog:profile' post.user.username %}">
+                {{ post.user.username }}
+            </a>
+        </small>
+
+        <p class="mt-2">
+            ❤️ {{ post.likes.count }} Likes |
+            🔖 {{ post.bookmarks.count }} Saves
+        </p>
+
+    </div>
+
+</div>
+
+{% empty %}
+
+<div class="alert alert-info">
+    No posts found.
+</div>
+
+{% endfor %}
+
+{% endblock %}

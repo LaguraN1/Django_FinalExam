@@ -1,0 +1,43 @@
+{% extends "blog/base.html" %}
+
+{% block title %}
+My Bookmarks
+{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">
+    My Bookmarks
+</h1>
+
+{% for bookmark in bookmarks %}
+
+<div class="card mb-3">
+    <div class="card-body">
+
+        <h3>
+            <a href="{% url 'blog:post-detail' bookmark.post.slug %}">
+                {{ bookmark.post.title }}
+            </a>
+        </h3>
+
+        <p>
+            {{ bookmark.post.body|truncatewords:30 }}
+        </p>
+
+        <small class="text-muted">
+            Saved at {{ bookmark.created_at }}
+        </small>
+
+    </div>
+</div>
+
+{% empty %}
+
+<div class="alert alert-info">
+    You have no saved posts yet.
+</div>
+
+{% endfor %}
+
+{% endblock %}
