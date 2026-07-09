@@ -34,3 +34,27 @@ class PostService:
         score = (likes_count - 1) / ((age_hours + 2) ** gravity)
 
         return score
+
+    @staticmethod
+    def get_trending_posts(gravity=1.8, limit=10):
+        posts = Post.objects.published().select_related(
+            "user"
+        ).prefetch_related(
+            "tags",
+            "likes"
+        )
+
+        posts = list(posts)
+
+        for post in posts:
+            post.trending_score = PostService.calculate_trending_score(
+                post,
+                gravity=gravity
+            )
+
+        posts.sort(
+            key=lambda post: post.trending_score,
+            reverse=True
+        )
+
+        return posts[:limit]

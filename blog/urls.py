@@ -9,6 +9,12 @@ urlpatterns = [
     path("post/create/", views.PostCreateView.as_view(), name="post-create"),
 
     path(
+        "trending/",
+        views.TrendingPostsView.as_view(),
+        name="trending-posts"
+    ),
+
+    path(
         "post/<slug:slug>/",
         views.PostDetailView.as_view(),
         name="post-detail"

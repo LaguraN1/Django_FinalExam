@@ -6,49 +6,45 @@ from django.views.generic import (
     DeleteView,
 )
 
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    UserPassesTestMixin,
-)
-
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from .services.post_service import PostService
-from .services.interaction_service import InteractionService
+from django.contrib import messages
+
 from django.urls import reverse_lazy
 from django.shortcuts import redirect, get_object_or_404
-from django.contrib import messages
-from .models import Post, Comment, Like, Bookmark, Follow
+
+from .models import Post, Comment, Bookmark, Follow
 from .forms import PostForm, CommentForm
-from django.db.models import Q
+
+from .mixins import OwnerRequiredMixin, SearchContextMixin
+from .services.post_service import PostService
+from .services.interaction_service import InteractionService
+
 
 User = get_user_model()
 
 
-class PostListView(ListView):
+class PostListView(SearchContextMixin, ListView):
+
     model = Post
     template_name = "blog/post_list.html"
     context_object_name = "posts"
+    paginate_by = 10
 
     def get_queryset(self):
         query = self.request.GET.get("q")
+        return PostService.get_published_posts(query)
 
-        queryset = Post.objects.published().select_related(
-        "user"
-        ).prefetch_related(
-        "tags"
-        ).order_by("-created_at")
 
-        if query:
-            queryset = queryset.search(query)
 
-        return queryset
+class TrendingPostsView(ListView):
+    model = Post
+    template_name = "blog/trending_posts.html"
+    context_object_name = "posts"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["q"] = self.request.GET.get("q", "")
-        return context
-
+    def get_queryset(self):
+        return PostService.get_trending_posts()
 
 class PostDetailView(DetailView):
     model = Post
@@ -67,17 +63,18 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     template_name = "blog/post_form.html"
     success_url = reverse_lazy("blog:post-list")
 
-def form_valid(self, form):
-    form.instance.user = self.request.user
+    def form_valid(self, form):
+        form.instance.user = self.request.user
 
-    messages.success(
-        self.request,
-        "Post created successfully."
-    )
+        messages.success(
+            self.request,
+            "Post created successfully."
+        )
 
-    return super().form_valid(form)
+        return super().form_valid(form)
 
-class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+
+class PostUpdateView(LoginRequiredMixin, OwnerRequiredMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = "blog/post_form.html"
@@ -88,27 +85,27 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             kwargs={"slug": self.object.slug}
         )
 
-    def test_func(self):
-        post = self.get_object()
-        return post.user == self.request.user
-    
     def form_valid(self, form):
         messages.success(
             self.request,
             "Post updated successfully."
         )
+
         return super().form_valid(form)
 
 
-
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, OwnerRequiredMixin, DeleteView):
     model = Post
     template_name = "blog/post_confirm_delete.html"
     success_url = reverse_lazy("blog:post-list")
 
-    def test_func(self):
-        post = self.get_object()
-        return post.user == self.request.user
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            "Post deleted successfully."
+        )
+
+        return super().form_valid(form)
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
@@ -121,7 +118,24 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
             Post,
             slug=self.kwargs["slug"]
         )
+
+        messages.success(
+            self.request,
+            "Comment added successfully."
+        )
+
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Comment is too short."
+        )
+
+        return redirect(
+            "blog:post-detail",
+            slug=self.kwargs["slug"]
+        )
 
     def get_success_url(self):
         return reverse_lazy(
@@ -130,19 +144,23 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         )
 
 
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin, OwnerRequiredMixin, DeleteView):
     model = Comment
     template_name = "blog/comment_confirm_delete.html"
-
-    def test_func(self):
-        comment = self.get_object()
-        return comment.user == self.request.user
 
     def get_success_url(self):
         return reverse_lazy(
             "blog:post-detail",
             kwargs={"slug": self.object.post.slug}
         )
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            "Comment deleted successfully."
+        )
+
+        return super().form_valid(form)
 
 
 class ProfileView(DetailView):
@@ -171,7 +189,15 @@ class ProfileView(DetailView):
         return context
 
 
-# --- Function Based Views ---
+class MyBookmarksView(LoginRequiredMixin, ListView):
+    model = Bookmark
+    template_name = "blog/bookmarks.html"
+    context_object_name = "bookmarks"
+
+    def get_queryset(self):
+        return Bookmark.objects.filter(
+            user=self.request.user
+        ).select_related("post").order_by("-created_at")
 
 
 @login_required
@@ -190,6 +216,16 @@ def reply_comment(request, comment_id):
                 post=parent_comment.post,
                 parent=parent_comment,
                 body=body
+            )
+
+            messages.success(
+                request,
+                "Reply added successfully."
+            )
+        else:
+            messages.error(
+                request,
+                "Reply cannot be empty."
             )
 
     return redirect(
@@ -225,28 +261,6 @@ def like_post(request, slug):
         "blog:post-detail",
         slug=slug
     )
-    post = get_object_or_404(
-        Post,
-        slug=slug
-    )
-
-    like = Like.objects.filter(
-        user=request.user,
-        post=post
-    )
-
-    if like.exists():
-        like.delete()
-    else:
-        Like.objects.create(
-            user=request.user,
-            post=post
-        )
-
-    return redirect(
-        "blog:post-detail",
-        slug=slug
-    )
 
 
 @login_required
@@ -270,28 +284,6 @@ def bookmark_post(request, slug):
         messages.info(
             request,
             "Bookmark removed."
-        )
-
-    return redirect(
-        "blog:post-detail",
-        slug=slug
-    )
-    post = get_object_or_404(
-        Post,
-        slug=slug
-    )
-
-    bookmark = Bookmark.objects.filter(
-        user=request.user,
-        post=post
-    )
-
-    if bookmark.exists():
-        bookmark.delete()
-    else:
-        Bookmark.objects.create(
-            user=request.user,
-            post=post
         )
 
     return redirect(
@@ -322,21 +314,6 @@ def follow_user(request, username):
         "blog:profile",
         username=username
     )
-    user_to_follow = get_object_or_404(
-        User,
-        username=username
-    )
-
-    if request.user != user_to_follow:
-        Follow.objects.get_or_create(
-            follower=request.user,
-            following=user_to_follow
-        )
-
-    return redirect(
-        "blog:profile",
-        username=username
-    )
 
 
 @login_required
@@ -361,31 +338,3 @@ def unfollow_user(request, username):
         "blog:profile",
         username=username
     )
-    user_to_unfollow = get_object_or_404(
-        User,
-        username=username
-    )
-
-    Follow.objects.filter(
-        follower=request.user,
-        following=user_to_unfollow
-    ).delete()
-
-    return redirect(
-        "blog:profile",
-        username=username
-    )
-
-
-class MyBookmarksView(LoginRequiredMixin, ListView):
-    model = Bookmark
-    template_name = "blog/bookmarks.html"
-    context_object_name = "bookmarks"
-
-    def get_queryset(self):
-        return Bookmark.objects.filter(
-            user=self.request.user
-        ).select_related("post").order_by("-created_at")
-    
-
-

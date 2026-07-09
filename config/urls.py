@@ -30,7 +30,6 @@ urlpatterns = [
         include("accounts.urls")
     ),
     
-    # ---> ADDED THE API ROUTE HERE <---
     path(
         "api/",
         include("api.urls")

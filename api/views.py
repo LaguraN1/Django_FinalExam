@@ -1,52 +1,105 @@
-from rest_framework import generics, status
-from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+
 from django.shortcuts import get_object_or_404
 
-from blog.models import Post, Comment, Like
+from blog.models import Post, Comment
+from blog.services.interaction_service import InteractionService
+
 from .serializers import PostSerializer, CommentSerializer
 
+
 class PostListCreateAPIView(generics.ListCreateAPIView):
-    """ GET /api/posts/ and POST /api/posts/ """
-    queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def perform_create(self, serializer):
-        # Automatically assign the logged-in user as the post author
-        serializer.save(user=self.request.user)
-
-class PostRetrieveAPIView(generics.RetrieveAPIView):
-    """ GET /api/posts/<slug>/ """
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    lookup_field = 'slug'
-
-class CommentListCreateAPIView(generics.ListCreateAPIView):
-    """ GET /api/posts/<slug>/comments/ and POST /api/posts/<slug>/comments/ """
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+    ]
 
     def get_queryset(self):
-        post = get_object_or_404(Post, slug=self.kwargs['slug'])
-        return Comment.objects.filter(post=post, parent=None) # Only return top-level comments
+        return Post.objects.published().select_related(
+            "user"
+        ).prefetch_related(
+            "likes",
+            "comments",
+            "tags",
+        ).order_by("-created_at")
 
     def perform_create(self, serializer):
-        post = get_object_or_404(Post, slug=self.kwargs['slug'])
-        serializer.save(user=self.request.user, post=post)
+        serializer.save(
+            user=self.request.user
+        )
 
-class PostLikeAPIView(APIView):
-    """ POST /api/posts/<slug>/like/ """
-    permission_classes = [IsAuthenticated]
+
+class PostDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = PostSerializer
+    lookup_field = "slug"
+
+    def get_queryset(self):
+        return Post.objects.published().select_related(
+            "user"
+        ).prefetch_related(
+            "likes",
+            "comments",
+            "tags",
+        )
+
+class PostLikeAPIView(generics.GenericAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
 
     def post(self, request, slug):
-        post = get_object_or_404(Post, slug=slug)
-        like = Like.objects.filter(user=request.user, post=post)
+        post = get_object_or_404(
+            Post,
+            slug=slug,
+            is_published=True
+        )
 
-        if like.exists():
-            like.delete()
-            return Response({"detail": "Post unliked."}, status=status.HTTP_200_OK)
+        created = InteractionService.like_post_idempotent(
+            request.user,
+            post
+        )
+
+        if created:
+            message = "Post liked."
         else:
-            Like.objects.create(user=request.user, post=post)
-            return Response({"detail": "Post liked."}, status=status.HTTP_201_CREATED)
+            message = "Post already liked."
+
+        return Response(
+            {
+                "message": message,
+                "liked": True,
+                "likes_count": post.likes.count(),
+            },
+            status=status.HTTP_200_OK
+        )
+class PostCommentListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+    ]
+
+    def get_post(self):
+        return get_object_or_404(
+            Post,
+            slug=self.kwargs["slug"],
+            is_published=True
+        )
+
+    def get_queryset(self):
+        post = self.get_post()
+
+        return Comment.objects.filter(
+            post=post,
+            parent__isnull=True
+        ).select_related(
+            "user"
+        ).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        post = self.get_post()
+
+        serializer.save(
+            user=self.request.user,
+            post=post
+        )

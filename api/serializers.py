@@ -1,32 +1,70 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from blog.models import Post, Comment, Tag
 
-User = get_user_model()
+from blog.models import Post, Comment
 
-class UserSerializer(serializers.ModelSerializer):
+
+class PostSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(
+        source="user.username",
+        read_only=True
+    )
+
+    likes_count = serializers.IntegerField(
+        source="likes.count",
+        read_only=True
+    )
+
+    comments_count = serializers.IntegerField(
+        source="comments.count",
+        read_only=True
+    )
+
     class Meta:
-        model = User
-        fields = ['id', 'username', 'bio', 'avatar_url']
+        model = Post
+        fields = [
+            "id",
+            "author",
+            "title",
+            "slug",
+            "body",
+            "is_published",
+            "views",
+            "likes_count",
+            "comments_count",
+            "created_at",
+            "updated_at",
+        ]
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = ['id', 'name', 'slug']
+        read_only_fields = [
+            "id",
+            "author",
+            "slug",
+            "views",
+            "likes_count",
+            "comments_count",
+            "created_at",
+            "updated_at",
+        ]
+
 
 class CommentSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
+    author = serializers.CharField(
+        source="user.username",
+        read_only=True
+    )
 
     class Meta:
         model = Comment
-        fields = ['id', 'user', 'body', 'created_at', 'parent']
-        read_only_fields = ['user', 'post', 'parent']
+        fields = [
+            "id",
+            "author",
+            "body",
+            "parent",
+            "created_at",
+        ]
 
-class PostSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = Post
-        fields = ['id', 'user', 'title', 'slug', 'body', 'is_published', 'views', 'tags', 'created_at']
-        read_only_fields = ['views', 'slug', 'user']
+        read_only_fields = [
+            "id",
+            "author",
+            "created_at",
+        ]
