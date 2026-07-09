@@ -6,64 +6,59 @@
 
 {% block content %}
 
-<div class="card mb-4">
-    <div class="card-body text-center">
+<div class="card profile-card mb-4">
+    <div class="card-body">
 
         <img 
         src="{{ profile_user.get_avatar_url }}" 
         alt="{{ profile_user.username }} avatar"
-        width="120"
-        height="120"
-        class="rounded-circle mb-3">
+        width="125"
+        height="125"
+        class="rounded-circle mb-3 profile-avatar">
 
-        <h1>
+        <h1 class="profile-name">
             {{ profile_user.username }}
         </h1>
 
         {% if profile_user.bio %}
-            <p>
+            <p class="text-muted">
                 {{ profile_user.bio }}
             </p>
         {% endif %}
 
-        <p class="text-muted">
-            Logged in as: {{ user.username }} |
-            Profile user: {{ profile_user.username }}
-        </p>
+        <div class="profile-stats">
+            <div class="profile-stat-box">
+                <strong>{{ followers_count }}</strong>
+                Followers
+            </div>
 
-        <p>
-            Followers: {{ followers_count }}
-        </p>
-
-        <p>
-            Following: {{ following_count }}
-        </p>
+            <div class="profile-stat-box">
+                <strong>{{ following_count }}</strong>
+                Following
+            </div>
+        </div>
 
         {% if user.is_authenticated %}
 
             {% if user.id != profile_user.id %}
 
                 {% if is_following %}
-
                     <a 
                     href="{% url 'blog:unfollow' profile_user.username %}"
                     class="btn btn-danger">
                         Unfollow
                     </a>
-
                 {% else %}
-
                     <a 
                     href="{% url 'blog:follow' profile_user.username %}"
                     class="btn btn-primary">
                         Follow
                     </a>
-
                 {% endif %}
 
             {% else %}
 
-                <p class="text-muted">
+                <p class="text-muted mb-0">
                     This is your profile.
                 </p>
 
@@ -72,9 +67,7 @@
         {% else %}
 
             <p>
-                <a href="{% url 'login' %}">
-                    Login
-                </a>
+                <a href="{% url 'login' %}">Login</a>
                 to follow this user.
             </p>
 
@@ -84,23 +77,23 @@
 </div>
 
 
-<h2>
+<h2 class="fw-bold mb-3">
     Posts by {{ profile_user.username }}
 </h2>
 
 {% for post in user_posts %}
 
-<div class="card mb-3">
+<div class="card post-card">
     <div class="card-body">
 
-        <h4>
+        <h4 class="post-title">
             <a href="{% url 'blog:post-detail' post.slug %}">
                 {{ post.title }}
             </a>
         </h4>
 
-        <p>
-            {{ post.body|truncatewords:30 }}
+        <p class="post-text">
+            {{ post.body|truncatewords:35 }}
         </p>
 
     </div>
@@ -108,9 +101,9 @@
 
 {% empty %}
 
-<p>
+<div class="alert alert-info">
     This user has no posts yet.
-</p>
+</div>
 
 {% endfor %}
 

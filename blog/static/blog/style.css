@@ -1,0 +1,209 @@
+body {
+    background: #f4f6fb;
+    font-family: Arial, sans-serif;
+    color: #111827;
+}
+
+.navbar {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.container {
+    max-width: 1100px;
+}
+
+.card {
+    border: none;
+    border-radius: 18px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.07);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    transition: 0.2s ease-in-out;
+}
+
+.card-body {
+    padding: 26px;
+}
+
+.post-card {
+    margin-bottom: 18px;
+}
+
+.post-title a {
+    color: #2563eb;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.post-title a:hover {
+    color: #1e40af;
+    text-decoration: none;
+}
+
+.post-text {
+    color: #374151;
+    margin-bottom: 12px;
+}
+
+.post-meta {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.profile-card {
+    text-align: center;
+    padding: 20px;
+}
+
+.profile-avatar {
+    border: 5px solid white;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+}
+
+.profile-name {
+    font-size: 36px;
+    font-weight: 800;
+    margin-top: 12px;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin: 18px 0;
+}
+
+.profile-stat-box {
+    background: #f9fafb;
+    padding: 12px 22px;
+    border-radius: 14px;
+    min-width: 120px;
+}
+
+.profile-stat-box strong {
+    display: block;
+    font-size: 22px;
+}
+
+.auth-wrapper {
+    min-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: white;
+    padding: 35px;
+    border-radius: 22px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
+}
+
+.auth-card h2 {
+    text-align: center;
+    font-weight: 800;
+    margin-bottom: 25px;
+}
+
+.auth-card label {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.auth-card input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    margin-bottom: 12px;
+}
+
+.auth-card .helptext {
+    display: block;
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: -6px;
+    margin-bottom: 10px;
+}
+
+.auth-card ul {
+    color: #6b7280;
+    font-size: 13px;
+    padding-left: 20px;
+}
+
+.auth-card button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn {
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: #4f46e5;
+    border-color: #4f46e5;
+}
+
+.btn-primary:hover {
+    background: #4338ca;
+    border-color: #4338ca;
+}
+
+.btn-success {
+    background: #16a34a;
+    border-color: #16a34a;
+}
+
+.btn-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.badge {
+    padding: 8px 11px;
+    border-radius: 20px;
+    margin-right: 5px;
+    font-size: 13px;
+}
+
+input.form-control,
+textarea.form-control,
+select.form-control {
+    border-radius: 12px;
+}
+
+.input-group .form-control {
+    border-radius: 12px 0 0 12px;
+}
+
+.input-group .btn {
+    border-radius: 0 12px 12px 0;
+}
+
+.alert {
+    border-radius: 14px;
+}
+
+.page-link {
+    border-radius: 10px;
+    margin: 0 3px;
+}
